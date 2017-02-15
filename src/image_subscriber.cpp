@@ -1,14 +1,158 @@
+#include "b39vt_assignment/image_processing.hpp"
+
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include "geometry_msgs/Point.h"
+#include "std_msgs/String.h"
+
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+class ImageSubscriber
+    {
+      // Start the node if not already started
+      ros::NodeHandle nh_;
+      image_transport::ImageTransport it_;
+      image_transport::Subscriber image_sub_;
+      image_transport::Publisher image_pub_;
+
+
+      public:
+      // Public variables
+      cv_bridge::CvImagePtr cv_ptr;
+
+      bool data_valid;
+
+      public:
+      // Public methods
+      ImageSubscriber() : it_(nh_), data_valid(false)
+          {
+              // Subscribe to input video feed
+              image_sub_ = it_.subscribe("/usb_cam/image_raw", 1, 
+              &ImageSubscriber::imageCb, this);
+          }
+
+
+      // Access cv_ptr in main method
+      cv::Mat getImage()
+          { 
+              return cv_ptr->image;
+          }
+
+
+      // Convert a sensor_msgs::image message to an OpenCV-compatible image
+      void imageCb(const sensor_msgs::ImageConstPtr& msg)
+          {
+            try
+                {
+                  cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+                  data_valid = true;
+                }
+                
+            catch (cv_bridge::Exception& e)
+                {
+                  ROS_ERROR("cv_bridge exception: %s", e.what());
+                  return;
+                }
+          }
+
+      
+      // Set threshold for each template
+      double getThreshold(int i)
+        {
+          double threshold;
+                                  
+          switch(i)
+              {
+                case 0:
+                    threshold = 1.3; // Biohazard
+                    break;
+                case 1:
+                    threshold = 1.7; // Danger
+                    break;
+                case 2:
+                    threshold = 1.4; // Fire
+                    break;
+                case 3:
+                    threshold = 1.3; // Alive
+                    break;
+                case 4:
+                    threshold = 1.6; // Dead
+                    break;
+                case 5:
+                    threshold = 1.4; // Radioactive
+                    break;
+                case 6:
+                    threshold = 1.95; // Smoking
+                    break;
+                case 7:
+                    threshold = 1.6; // Toxic
+                    break;
+              }   
+          return threshold;                               
+        }
+    };
+
+
+int main(int argc, char** argv)
+    {
+      ros::init(argc, argv, "image_subscriber");
+      ImageSubscriber ic;
+        
+      // Create vector of pairs
+      std::vector< std::pair<cv::Mat, char*> > templ;
+                    
+		  // Fill the vector with pair of the template and string name of template
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/biohazard.png"),"Biohazard"));
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/danger.png"),"Danger"));
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/fire.png"),"Fire"));
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/alive.png"),"Alive"));
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/dead.png"),"Dead"));
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/radioactive.png"),"Radioactive"));
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/smoking2.png"),"Smoking"));
+		  templ.push_back(std::pair<cv::Mat, char*>(cv::imread("/home/calum/Pictures/Test_Images/toxic.png"),"Toxic"));
+		  
+
+
+        while (ros::ok())
+          {
+            if (ic.data_valid)
+                  {
+		                // Iterate through vector and call templateMatching()
+		                for(int i = 0;i < 8; i++)
+				              {
+						            cv::Mat tem = templ[i].first;
+						            char* sign = templ[i].second;
+						            
+						            //Template size
+						            cv::Size size(235,235);  
+						            //Resize image
+						            cv::resize(tem,tem,size);
+						                  
+						            templateMatching(ic.getImage(), tem, sign, ic.getThreshold(i));
+						            cv::waitKey(3);
+				              }
+                  }
+                  
+             ros::spinOnce();
+          }
+            
+        return 0;
+    }
+/*
+
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
 #include "geometry_msgs/Point.h"
 #include "std_msgs/String.h"
-
-
-#include <string>
 
 #include "b39vt_assignment/image_processing.hpp"
 
@@ -51,7 +195,7 @@ public:
   }
 
 
-  cv::Mat getImage(){ //to access cv_ptr in main method
+  cv::Mat getImage(){
   
   return cv_ptr->image;
   
@@ -84,66 +228,32 @@ int main(int argc, char** argv)
   
   //cv::Mat a;
   //cv::Mat b;
-  
-        
-    std::vector< std::pair<cv::Mat, std::string> > templ;
-            
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/biohazard.png"),"biohazard"));
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/danger.png"),"danger"));
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/fire.png"),"fire"));
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/greeen_helmet.png"),"green_helmet"));
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/red_helmet.png"),"red_helmet"));
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/radioactive.png"),"radioactive"));
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/smoking.png"),"smoking"));
-          templ.push_back(std::pair<cv::Mat, std::string>(cv::imread("/home/calum/Pictures/Test_Images/toxic.png"),"toxic"));
-          
-          
-    
-    /*tempMap[cv::imread("/home/calum/Pictures/Test_Images/biohazard.png")] = "biohazard";
-    tempMap[cv::imread("/home/calum/Pictures/Test_Images/danger.png")] = "danger";
-    tempMap[cv::imread("/home/calum/Pictures/Test_Images/fire.png")] = "fire";
-    tempMap[cv::imread("/home/calum/Pictures/Test_Images/green_helmet.png")] = "green_helmet";
-    tempMap[cv::imread("/home/calum/Pictures/Test_Images/red_helmet.png")] = "red_helmet";
-    tempMap[cv::imread("/home/calum/Pictures/Test_Images/radioactive.png")] = "radioactive";
-    tempMap[cv::imread("/home/calum/Pictures/Test_Images/smoking.png")] = "smoking";
-    tempMap[cv::imread("/home/calum/Pictures/Test_Images/toxic.png")] = "toxic";
-    
-    
-  //array of templates
-        cv::Mat templ[8]; 
-        
-        templ[0] = cv::imread("/home/calum/Pictures/Test_Images/biohazard.png");
-        templ[1] = cv::imread("/home/calum/Pictures/Test_Images/danger.png");
-        templ[2] = cv::imread("/home/calum/Pictures/Test_Images/fire.png");
-        templ[3] = cv::imread("/home/calum/Pictures/Test_Images/green_helmet.png");
-        templ[4] = cv::imread("/home/calum/Pictures/Test_Images/red_helmet.png");
-        templ[5] = cv::imread("/home/calum/Pictures/Test_Images/radioactive.png");
-        templ[6] = cv::imread("/home/calum/Pictures/Test_Images/smoking.png");
-        templ[7] = cv::imread("/home/calum/Pictures/Test_Images/toxic.png");
-  */
+  cv::Mat templ; 
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/biohazard.png");
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/danger.png");
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/fire.png");
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/alive.png");
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/dead.png");
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/radioactive.png");
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/smoking2.png");
+        //templ = cv::imread("/home/calum/Pictures/Test_Images/toxic.png");
   
   while (ros::ok())
   {
         if (ic.data_valid)
         {
             //templateMatching(cv_ptr->image, templ);
-            for(int i = 0;i < 7; i++) //change condition to .size()
-                {
-                    cv::Mat tem = templ[i].first;
-                            std::string sign = templ[i].second;
-                    
-                    printf("%d,%d",tem.cols, tem.rows);
-                    
-                    cv::Size size(235,235);//template size,e.g.100x100
-                    cv::resize(tem,tem,size);//resize image
-                            
-                            
+            
+                
+                    cv::Size size(225,225);//template size,e.g.100x100
+                    cv::resize(templ,templ,size);//resize image
+            
                     //cv::imshow(template_window, templ[i]);
 
                 
-                    templateMatching(ic.getImage(), tem, sign);
-                    cv::waitKey(3);
-                }
+                    templateMatching(ic.getImage(), templ);
+                    cv::waitKey(100);
+                
     
  
         }
@@ -151,4 +261,7 @@ int main(int argc, char** argv)
   }
   return 0;
 }
+
+*/
+
 
