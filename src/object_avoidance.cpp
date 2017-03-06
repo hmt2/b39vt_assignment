@@ -7,8 +7,8 @@ class RobotDriver
 {
 private:
     ros::NodeHandle nh_;
-    ros::Publisher cmd_vel_pub;
-    ros::Subscriber scanSub;
+    ros::Publisher cmd_vel_pub_;
+    ros::Subscriber scanSub_;
 
 public:
     //ROS node initialization
@@ -16,9 +16,9 @@ public:
     {
         nh_ = nh;
         //set up the publisher for the cmd_vel topic
-        cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1);
+        cmd_vel_pub_= nh_.advertise<geometry_msgs::Twist>("/mobile_base/commands/velocity", 1);
         //set up the subscriber to laserscan
-        scanSub = nh_.subscribe<sensor_msgs::LaserScan>("/scan",1, &RobotDriver::processLaserScan, this);
+        scanSub_ = nh_.subscribe<sensor_msgs::LaserScan>("/scan",1, &RobotDriver::processLaserScan, this);
     }
 
     //find average method
