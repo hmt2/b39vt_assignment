@@ -72,110 +72,47 @@ public:
         printf("e = %f\n", e);
         printf("e = %f\n", f);
 
-        //set case conditions for switch statement for each segment
-        int val;
+        //set conditions
+
 
         if(a<0.2)
-        {
-            val = 1;
-        }
-
-        if(b<0.3)
-        {
-            val = 2;
-        }
-
-        if(c<0.2)
-        {
-            val = 3;
-        }
-
-        if(d<0.2)
-        {
-            val = 4;
-        }
-
-        if(e<0.3)
-        {
-            val = 5;
-        }
-
-        if(f<0.2)
-        {
-            val = 6;
-        }
-
-
-        switch(val)
-        {
-
-        case 1 : //a<0.2
         {
             base_cmd.linear.x = 0;
             base_cmd.angular.z = 1;
 
-            cmd_vel_pub_.publish(base_cmd);
-
         }
-            break;
 
-        case 2 : //b<0.3
+        if(b<0.3)
         {
             base_cmd.linear.x = 0;
             base_cmd.angular.z = 2;
-
-            cmd_vel_pub_.publish(base_cmd);
-
         }
-            break;
 
-
-        case 3 : //c<0.2
+        if(c<0.2)
         {
             base_cmd.linear.x = 0;
             base_cmd.angular.z = 1.5;
-
-            cmd_vel_pub_.publish(base_cmd);
-            sleep(1);
-
         }
-            break;
 
-        case 4 : //d<0.2
+        if(d<0.2)
         {
             base_cmd.linear.x = 0;
             base_cmd.angular.z = -1;
-
-            cmd_vel_pub_.publish(base_cmd);
-            sleep(1);
-
         }
-            break;
 
-        case 5 : //e<0.3
+        if(e<0.3)
         {
             base_cmd.linear.x = 0;
             base_cmd.angular.z = -2;
-
-            cmd_vel_pub_.publish(base_cmd);
-
         }
-            break;
 
-
-        case 6 : //f<0.2
+        if(f<0.2)
         {
             base_cmd.linear.x = 0;
             base_cmd.angular.z = -1;
-
-            cmd_vel_pub_.publish(base_cmd);
-
         }
-            break;
 
-        default : //if no case conditions met, default to moving forward
-            base_cmd.linear.x = 0.1;
-        }
+        cmd_vel_pub_.publish(base_cmd);
 
     }
 
@@ -186,7 +123,7 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "robot_driver");
     ros::NodeHandle nh;
-    printf("0");
+    //  printf("0");
     RobotDriver driver(nh);
     ros::spin();
 }

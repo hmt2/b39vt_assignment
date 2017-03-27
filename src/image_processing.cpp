@@ -10,11 +10,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-void templateMatching(const cv::Mat& img, const cv::Mat& tem, const char* sign, const float threshold)
+bool templateMatching(const cv::Mat& img, const cv::Mat& tem, const char* sign, const float threshold)
 {
-    const char * image_window = "/usb_cam/image_raw";
+    const char * image_window = "/camera/rgb/image_raw";
     const char * template_window = "Template window";
-
+    bool matchFound = false;
 
     // Source image to display
     cv::Mat img_display, result;
@@ -38,11 +38,13 @@ void templateMatching(const cv::Mat& img, const cv::Mat& tem, const char* sign, 
 
     // Create newVal to compare threshold against
     double newVal = minVal/1000000000;
+    printf("newVal %.2f \n     ", newVal);
 
     // Only enter loop if confident in a match
     if(newVal < threshold)
         {
-          if( match_method  == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED )
+
+        if( match_method  == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED )
               { 
                matchLoc = minLoc;
               }
@@ -59,8 +61,10 @@ void templateMatching(const cv::Mat& img, const cv::Mat& tem, const char* sign, 
           cv::imshow( image_window, img_display );
           
           // Output data  
-          printf("Template Match: %s", sign);
+          printf("Template Match: %s\n", sign);
           printf("    Found at: x= %d, y= %d\n", matchLoc.x, matchLoc.y);
+         // printf("threshold %d\n", threshold);
+          matchFound = true;
         }
 
     else
@@ -73,6 +77,7 @@ void templateMatching(const cv::Mat& img, const cv::Mat& tem, const char* sign, 
     cv::imshow(template_window, tem);
 
     cv::waitKey(3);
+    return matchFound;
 }
 
 
